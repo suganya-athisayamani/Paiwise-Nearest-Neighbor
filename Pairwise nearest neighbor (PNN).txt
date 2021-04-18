@@ -1,0 +1,90 @@
+function N=pairwise_term(img)
+n_pixels = size(img,1) * size(img,2);
+[M,N,~] = size(img);
+north_offset = -1;
+east_offset = M;
+south_offset = 1;
+west_offset = -M;
+padded_img=padarray(double(img(:,:,1)),[1 1],Inf);
+[Row Col]= find(padded_img~=Inf);
+idx= sub2ind(size(padded_img),Row,Col);
+% Compute the indices of all the north neighbors.
+idx2=idx;
+north_idx = idx2 + north_offset;
+no_north_connections=isinf(padded_img(north_idx));
+idx2(no_north_connections)=[];
+
+[Row2 Col2]=ind2sub(size(padded_img),idx2);
+tempRow=Row2-1;tempCol=Col2-1;
+have_north_pixels=sub2ind([M N],tempRow,tempCol);
+north_idx = have_north_pixels + north_offset;
+
+% Compute the indices of all the south neighbors.
+idx2=idx;
+south_idx = idx2 + south_offset;
+no_south_connections=isinf(padded_img(south_idx));
+idx2(no_south_connections)=[];
+
+[Row2 Col2]=ind2sub(size(padded_img),idx2);
+tempRow=Row2-1;tempCol=Col2-1;
+have_south_pixels=sub2ind([M N],tempRow,tempCol);
+south_idx = have_south_pixels + south_offset;
+
+% Compute the indices of all the east neighbors.
+idx2=idx;
+east_idx = idx2 + east_offset + 2;
+no_east_connections=isinf(padded_img(east_idx));
+idx2(no_east_connections)=[];
+
+[Row2 Col2]=ind2sub(size(padded_img),idx2);
+tempRow=Row2-1;tempCol=Col2-1;
+have_east_pixels=sub2ind([M N],tempRow,tempCol);
+east_idx = have_east_pixels + east_offset;
+
+% Compute the indices of all the west neighbors.
+idx2=idx;
+west_idx = idx2 + west_offset - 2;
+no_west_connections=isinf(padded_img(west_idx));
+idx2(no_west_connections)=[];
+
+[Row2 Col2]=ind2sub(size(padded_img),idx2);
+tempRow=Row2-1;tempCol=Col2-1;
+have_west_pixels=sub2ind([M N],tempRow,tempCol);
+west_idx = have_west_pixels + west_offset;
+
+% calculate the sparse matrix values 
+a=img(:,:,1);
+b=img(:,:,2);
+c=img(:,:,3);
+
+temp=[a(have_north_pixels) b(have_north_pixels) c(have_north_pixels)]';
+temp2=[a(north_idx) b(north_idx) c(north_idx)]';
+ temp3=temp-temp2; 
+ colnorm=sqrt(sum(temp3.^2,1));
+north_values=1./(colnorm+1);
+
+temp=[a(have_south_pixels) b(have_south_pixels) c(have_south_pixels)]';
+temp2=[a(south_idx) b(south_idx) c(south_idx)]';
+ temp3=temp-temp2; 
+ colnorm=sqrt(sum(temp3.^2,1));
+south_values=1./(colnorm+1);
+
+temp=[a(have_east_pixels) b(have_east_pixels) c(have_east_pixels)]';
+temp2=[a(east_idx) b(east_idx) c(east_idx)]';
+ temp3=temp-temp2; 
+ colnorm=sqrt(sum(temp3.^2,1));
+east_values=1./(colnorm+1);
+
+temp=[a(have_west_pixels) b(have_west_pixels) c(have_west_pixels)]';
+temp2=[a(west_idx) b(west_idx) c(west_idx)]';
+ temp3=temp-temp2; 
+ colnorm=sqrt(sum(temp3.^2,1));
+west_values=1./(colnorm+1);
+
+i=cat(1,have_east_pixels,have_north_pixels,have_south_pixels,have_west_pixels);
+j=cat(1,east_idx,north_idx,south_idx,west_idx);
+s=cat(1,east_values',north_values',south_values',west_values');
+
+N=sparse(i,j,s,n_pixels,n_pixels);
+
+end
